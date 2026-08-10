@@ -1,0 +1,132 @@
+{
+  // ==============================================================================
+  // DURGA Safety App - VS Code Task Configuration
+  // ------------------------------------------------------------------------------
+  // How to run:
+  //   Ctrl+Shift+B (Cmd+Shift+B on macOS) runs "Start Everything" directly.
+  //   Or: Ctrl+Shift+P -> "Tasks: Run Task" -> pick a task.
+  // ==============================================================================
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Backend",
+      "type": "shell",
+      "command": "bash backend/run_local.sh",
+      "windows": {
+        "command": "backend\\run_local.bat"
+      },
+      "isBackground": true,
+      // FIX: no problemMatcher meant VS Code had no way to know the backend
+      // was actually up - paired with the sequenced "Start Everything" below,
+      // this used to hang forever waiting on a background task to "complete".
+      "problemMatcher": {
+        "owner": "durga-backend",
+        "pattern": {
+          "regexp": "^.*$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*Started server process.*",
+          "endsPattern": ".*Application startup complete.*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "durga",
+        "clear": false
+      }
+    },
+    {
+      "label": "Start Frontend",
+      "type": "shell",
+      "command": "bash scripts/run_frontend.sh",
+      "windows": {
+        "command": "scripts\\run_frontend.bat"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "durga",
+        "clear": false
+      }
+    },
+    {
+      "label": "Start Everything",
+      "dependsOn": [
+        "Start Backend",
+        "Start Frontend"
+      ],
+      // FIX: this was "sequence" with a backend task that is isBackground
+      // and never exits, so VS Code waited forever for it to "complete" and
+      // the frontend task never launched. "parallel" starts both at once.
+      "dependsOrder": "parallel",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Seed helplines",
+      "type": "shell",
+      "command": ".venv/Scripts/python -m scripts.seed_helplines",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "linux": {
+        "command": ".venv/bin/python -m scripts.seed_helplines"
+      },
+      "osx": {
+        "command": ".venv/bin/python -m scripts.seed_helplines"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "durga-utility"
+      }
+    },
+    {
+      "label": "Reset database",
+      "type": "shell",
+      "command": "rm -f durga.db && echo 'durga.db removed - restart the backend to recreate it.'",
+      "windows": {
+        "command": "if exist durga.db del durga.db && echo durga.db removed - restart the backend to recreate it."
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "durga-utility"
+      }
+    },
+    {
+      "label": "Run backend tests",
+      "type": "shell",
+      "command": ".venv/Scripts/python -m pytest -v",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "linux": {
+        "command": ".venv/bin/python -m pytest -v"
+      },
+      "osx": {
+        "command": ".venv/bin/python -m pytest -v"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "durga-utility"
+      }
+    }
+  ]
+}

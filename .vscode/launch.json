@@ -1,0 +1,81 @@
+{
+  // ==============================================================================
+  // DURGA Safety App - VS Code Run & Debug Launch Configurations
+  // Select a target from the Debug dropdown (F5), or use a "DURGA: ..."
+  // compound to start the backend and a Flutter target together in one press.
+  // ==============================================================================
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // FIX: there was no Python/FastAPI configuration at all - the backend
+      // could never be debugged (breakpoints, step-through) from VS Code.
+      "name": "Backend (FastAPI)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"],
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/backend/.env",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/backend"
+      },
+      "python": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "DURGA App (Android Emulator)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1"
+      ]
+    },
+    {
+      "name": "DURGA App (iOS Simulator / Desktop / Web)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1"
+      ]
+    },
+    {
+      "name": "DURGA App (Chrome/Web)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "chrome",
+      "args": [
+        "--dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1"
+      ]
+    },
+    {
+      "name": "DURGA App (Physical Phone - Change IP in args)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define=API_BASE_URL=http://192.168.1.100:8000/api/v1"
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "DURGA: Backend + Android App",
+      "configurations": ["Backend (FastAPI)", "DURGA App (Android Emulator)"],
+      "stopAll": true
+    },
+    {
+      "name": "DURGA: Backend + Web App",
+      "configurations": ["Backend (FastAPI)", "DURGA App (Chrome/Web)"],
+      "stopAll": true
+    },
+    {
+      "name": "DURGA: Backend + Desktop App",
+      "configurations": ["Backend (FastAPI)", "DURGA App (iOS Simulator / Desktop / Web)"],
+      "stopAll": true
+    }
+  ]
+}
