@@ -3,6 +3,7 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
+    id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -20,7 +21,7 @@ val mapsApiKey: String = localProperties.getProperty("MAPS_API_KEY") ?: ""
 android {
     namespace = "com.arun.durga.durga"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.2.12479018"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -32,7 +33,7 @@ android {
         applicationId = "com.arun.durga.durga"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -47,11 +48,8 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    kotlinOptions {
+        jvmTarget = "17"
     }
 }
 

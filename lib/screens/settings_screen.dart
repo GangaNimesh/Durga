@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../theme/colors.dart';
 import '../providers/auth_provider.dart';
+import 'onboarding_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -62,6 +63,51 @@ class SettingsScreen extends StatelessWidget {
                         : '—',
                   ),
                 ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const OnboardingScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.slideshow, color: AppColors.primary),
+                label: const Text("View Onboarding Screen", style: TextStyle(color: AppColors.primary)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await OnboardingScreen.reset();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Onboarding state reset! Restart app to see it on launch.")),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.restart_alt, color: AppColors.subtitle),
+                label: const Text("Reset Onboarding Flag", style: TextStyle(color: AppColors.subtitle)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: const BorderSide(color: AppColors.border),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
               ),
             ),
 
