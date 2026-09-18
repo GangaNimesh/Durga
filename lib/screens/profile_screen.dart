@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/supabase_service.dart';
 import '../theme/onboarding_colors.dart';
 import 'onboarding_screen.dart';
+import 'voice_log_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -16,6 +17,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
+  bool _alwaysListening = false;
 
   @override
   void initState() {
@@ -25,12 +27,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUserProfile() async {
     final user = await SupabaseService.instance.getUser();
+    final voiceSettings = await SupabaseService.instance.getVoiceSettings();
     if (mounted) {
       setState(() {
         _userData = user;
+        _alwaysListening = voiceSettings?['always_listening'] ?? false;
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _toggleVoiceListening(bool val) async {
+    setState(() => _alwaysListening = val);
+    await SupabaseService.instance.upsertVoiceSettings(alwaysListening: val);
   }
 
   Future<void> _restartOnboarding() async {
@@ -102,6 +111,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 16),
                 _buildInfoField('Email Address', _userData?['email'] ?? 'Not set', Icons.email),
                 
+                const SizedBox(height: 32),
+
+                // Voice Commands Section
+                Text(
+                  'VOICE COMMANDS',
+                  style: GoogleFonts.inter(
+                    color: Colors.white54,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Always-listening mode', style: GoogleFonts.inter(color: Colors.white, fontSize: 16)),
+                                const SizedBox(height: 2),
+                                Text('Allows "Hey Durga" wake word. May impact battery life.', style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _alwaysListening,
+                            onChanged: _toggleVoiceListening,
+                            activeColor: OnboardingColors.coral,
+                          ),
+                        ],
+                      ),
+                      const Divider(color: Colors.white10, height: 20),
+                      InkWell(
+                        onTap: () {
+                          Navigator.of(context).push(MaterialPageRoute(builder: (_) => const VoiceLogScreen()));
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text('Voice Activity Log', style: GoogleFonts.inter(color: Colors.white, fontSize: 16)),
+                              ),
+                              const Icon(Icons.chevron_right, color: Colors.white54),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
                 const SizedBox(height: 48),
 
                 // Debug Tools Section

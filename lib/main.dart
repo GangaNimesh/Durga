@@ -1,21 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'providers/auth_provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/supabase_service.dart';
+import 'services/solo_trip_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/new_home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Load environment variables safely
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint("Warning: Could not load .env file: $e");
+  }
+
   // Initialize Supabase with project credentials
-  await SupabaseService.instance.init(
-    supabaseUrl: 'https://qfkmeqbtodaeqhaagryu.supabase.co',
-    supabaseAnonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFma21lcWJ0b2RhZXFoYWFncnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1Mzk0MjIsImV4cCI6MjEwMjExNTQyMn0.cF13lEhSKjIolYQeri4E9NttUoHVyjgh7H7Gw3jb_QE',
-  );
+  final supabaseUrl = dotenv.env['SUPABASE_URL'] ?? 'https://qfkmeqbtodaeqhaagryu.supabase.co';
+  final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFma21lcWJ0b2RhZXFoYWFncnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1Mzk0MjIsImV4cCI6MjEwMjExNTQyMn0.cF13lEhSKjIolYQeri4E9NttUoHVyjgh7H7Gw3jb_QE';
+
+  try {
+    await SupabaseService.instance.init(
+      supabaseUrl: supabaseUrl,
+      supabaseAnonKey: supabaseAnonKey,
+    );
+  } catch (e) {
+    debugPrint("Supabase init error: $e");
+  }
+  
+  try {
+    await SoloTripService.instance.init();
+  } catch (e) {
+    debugPrint("SoloTripService init error: $e");
+  }
 
   runApp(const DurgaApp());
 }
