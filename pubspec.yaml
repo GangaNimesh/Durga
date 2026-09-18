@@ -72,6 +72,14 @@ dependencies:
   # Audio recording (silent record feature)
   record: ^5.2.1
   camera: ^0.11.2+1
+  flutter_dotenv: ^6.0.1
+  speech_to_text: ^7.4.0
+  flutter_tts: ^4.2.5
+  google_generative_ai: ^0.4.7
+  flutter_local_notifications: ^19.5.0
+  flutter_foreground_task: ^9.2.2
+  open_wake_word:
+    path: d:\Downloads2\cap\open_wake_word
 
 dev_dependencies:
   flutter_test:
@@ -87,8 +95,11 @@ flutter:
   uses-material-design: true
 
   assets:
+    - .env
     - assets/images/
     - assets/icons/
+    - assets/wake_word/
+    - assets/legal/
 
   # Uncomment when we add custom fonts
   # fonts:
