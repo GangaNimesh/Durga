@@ -286,4 +286,203 @@ class SupabaseService {
 
     return score.clamp(0, 100);
   }
+    // ═══════════════════════════════════════════════════════════════════════
+  // VOICE COMMANDS
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Get voice settings
+  Future<Map<String, dynamic>?> getVoiceSettings() async {
+    return await _client
+        .from('voice_settings')
+        .select()
+        .eq('user_id', _userId)
+        .maybeSingle();
+  }
+
+  /// Update or insert voice settings
+  Future<void> upsertVoiceSettings({required bool alwaysListening}) async {
+    final data = <String, dynamic>{
+      'user_id': _userId,
+      'always_listening': alwaysListening,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+    await _client.from('voice_settings').upsert(
+      data,
+      onConflict: 'user_id',
+    );
+  }
+
+  /// Log a voice command
+  Future<void> logVoiceCommand({
+    required bool wakeDetected,
+    required String transcript,
+    required String matchedIntent,
+    required String actionTaken,
+    required bool cancelled,
+  }) async {
+    final data = <String, dynamic>{
+      'user_id': _userId,
+      'wake_detected': wakeDetected,
+      'transcript': transcript,
+      'matched_intent': matchedIntent,
+      'action_taken': actionTaken,
+      'cancelled': cancelled,
+    };
+    await _client.from('voice_command_log').insert(data);
+  }
+
+  /// Get voice command history
+  Future<List<Map<String, dynamic>>> getVoiceCommandLog({int limit = 50}) async {
+    return await _client
+        .from('voice_command_log')
+        .select()
+        .eq('user_id', _userId)
+        .order('created_at', ascending: false)
+        .limit(limit);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SOLO TRIP & LIVE LOCATION
+  // ═══════════════════════════════════════════════════════════════════════
+
+  Future<Map<String, dynamic>> startSoloTripSession({
+    required int intervalMinutes,
+    required int gracePeriodMinutes,
+    required String notifyMethod,
+    required List<String> alertContactIds,
+  }) async {
+    final now = DateTime.now();
+    final nextCheckin = now.add(Duration(minutes: intervalMinutes));
+
+    final data = <String, dynamic>{
+      'user_id': _userId,
+      'interval_minutes': intervalMinutes,
+      'grace_period_minutes': gracePeriodMinutes,
+      'notify_method': notifyMethod,
+      'status': 'active',
+      'started_at': now.toIso8601String(),
+      'next_checkin_due_at': nextCheckin.toIso8601String(),
+      'alert_contact_ids': alertContactIds,
+    };
+
+    return await _client.from('solo_trip_sessions').insert(data).select().single();
+  }
+
+  Future<void> confirmCheckin({
+    required String sessionId,
+    double? lat,
+    double? lng,
+  }) async {
+    final now = DateTime.now();
+    
+    // Get current session to calculate next due
+    final session = await _client
+        .from('solo_trip_sessions')
+        .select()
+        .eq('id', sessionId)
+        .single();
+        
+    final interval = session['interval_minutes'] as int;
+    final nextCheckin = now.add(Duration(minutes: interval));
+
+    // Update session
+    await _client.from('solo_trip_sessions').update({
+      'last_confirmed_at': now.toIso8601String(),
+      'next_checkin_due_at': nextCheckin.toIso8601String(),
+    }).eq('id', sessionId);
+
+    // Log check-in
+    await _client.from('solo_trip_checkin_log').insert({
+      'session_id': sessionId,
+      'due_at': session['next_checkin_due_at'],
+      'responded_at': now.toIso8601String(),
+      'response_lat': lat,
+      'response_lng': lng,
+    });
+  }
+
+  Future<void> endSoloTripSession(String sessionId) async {
+    await _client.from('solo_trip_sessions').update({
+      'status': 'completed',
+    }).eq('id', sessionId);
+  }
+
+  Future<Map<String, dynamic>?> getActiveSoloTrip() async {
+    return await _client
+        .from('solo_trip_sessions')
+        .select()
+        .eq('user_id', _userId)
+        .eq('status', 'active')
+        .maybeSingle();
+  }
+
+  Future<void> upsertLiveLocation({
+    required double lat,
+    required double lng,
+    required String source,
+    List<String>? contactIds,
+    DateTime? expiresAt,
+  }) async {
+    final now = DateTime.now().toIso8601String();
+    
+    if (contactIds == null || contactIds.isEmpty) {
+      // Just store a generic location trace (MVP fallback)
+      await _client.from('live_location_shares').insert({
+        'user_id': _userId,
+        'lat': lat,
+        'lng': lng,
+        'source': source,
+        'updated_at': now,
+        'expires_at': expiresAt?.toIso8601String(),
+      });
+      return;
+    }
+
+    // Upsert for each contact
+    for (final contactId in contactIds) {
+      await _client.from('live_location_shares').upsert({
+        'user_id': _userId,
+        'shared_with_contact_id': contactId,
+        'lat': lat,
+        'lng': lng,
+        'source': source,
+        'updated_at': now,
+        'expires_at': expiresAt?.toIso8601String(),
+      }, onConflict: 'user_id, shared_with_contact_id');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // LEGAL CHATBOT
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Save a chat message (user or assistant)
+  Future<void> saveChatMessage({
+    required String role,
+    required String content,
+  }) async {
+    await _client.from('legal_chat_messages').insert({
+      'user_id': _userId,
+      'role': role,
+      'content': content,
+    });
+  }
+
+  /// Get chat history for the current user
+  Future<List<Map<String, dynamic>>> getChatHistory({int limit = 100}) async {
+    return await _client
+        .from('legal_chat_messages')
+        .select()
+        .eq('user_id', _userId)
+        .order('created_at', ascending: false)
+        .limit(limit);
+  }
+
+  /// Clear all chat history for the current user
+  Future<void> clearChatHistory() async {
+    await _client
+        .from('legal_chat_messages')
+        .delete()
+        .eq('user_id', _userId);
+  }
 }
