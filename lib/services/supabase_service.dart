@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -353,6 +354,17 @@ class SupabaseService {
   }) async {
     final now = DateTime.now();
     final nextCheckin = now.add(Duration(minutes: intervalMinutes));
+
+    // Proactively complete any existing active sessions to prevent idx_active_solo_trip conflict
+    try {
+      await _client
+          .from('solo_trip_sessions')
+          .update({'status': 'completed'})
+          .eq('user_id', _userId)
+          .eq('status', 'active');
+    } catch (e) {
+      debugPrint('[SupabaseService] Error closing previous active sessions: $e');
+    }
 
     final data = <String, dynamic>{
       'user_id': _userId,

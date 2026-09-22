@@ -81,7 +81,21 @@ class SoloTripService extends ChangeNotifier {
         _startedAt = DateTime.now();
         _startBackgroundTasks(savedInterval);
         notifyListeners();
-        debugPrint('[SoloTripService] Restored active session: $savedSessionId');
+        debugPrint('[SoloTripService] Restored active session from prefs: $savedSessionId');
+        return;
+      }
+
+      // Check remote Supabase active session
+      final remoteSession = await SupabaseService.instance.getActiveSoloTrip();
+      if (remoteSession != null) {
+        _activeSessionId = remoteSession['id'];
+        _intervalMinutes = remoteSession['interval_minutes'] as int? ?? 15;
+        _startedAt = DateTime.tryParse(remoteSession['started_at'] ?? '') ?? DateTime.now();
+        await prefs.setString(_prefSessionIdKey, _activeSessionId!);
+        await prefs.setInt(_prefIntervalKey, _intervalMinutes);
+        _startBackgroundTasks(_intervalMinutes);
+        notifyListeners();
+        debugPrint('[SoloTripService] Restored active session from Supabase: $_activeSessionId');
       }
     } catch (e) {
       debugPrint('[SoloTripService] Failed to restore session: $e');
