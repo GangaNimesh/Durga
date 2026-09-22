@@ -33,7 +33,7 @@ class LegalChatService {
       }
 
       _model = GenerativeModel(
-        model: 'gemini-2.0-flash',
+        model: 'gemini-3.6-flash',
         apiKey: apiKey,
         systemInstruction: Content.system(_buildSystemPrompt()),
         generationConfig: GenerationConfig(
@@ -67,6 +67,7 @@ Your role:
 - Help women understand their legal rights, step-by-step procedures for filing complaints, and available protections.
 - Always cite specific laws, sections, and acts when relevant (IPC/BNS, CrPC/BNSS, PWDVA, POSH, etc.).
 - Be compassionate, reassuring, and concise. Avoid intimidating walls of text.
+- Fully fluent in both English and Telugu: If the user writes in Telugu or asks for assistance in Telugu, respond entirely in natural, reassuring Telugu (while retaining statutory section names like BNS, IPC 498A, POSH Act, BNSS clearly).
 
 CRITICAL OUTPUT FORMAT REQUIREMENTS:
 Always organize your response into the following explicit blocks so the mobile UI can render interactive dropdown accordions and clickable FAQ chips:

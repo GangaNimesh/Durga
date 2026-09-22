@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'providers/auth_provider.dart';
+import 'providers/locale_provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/supabase_service.dart';
 import 'services/solo_trip_service.dart';
@@ -50,6 +51,7 @@ class DurgaApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

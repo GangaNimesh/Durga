@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../theme/onboarding_colors.dart';
+import '../common/language_toggle_slider.dart';
 import 'page_indicator.dart';
 
 /// Reusable layout for a single onboarding slide.
@@ -85,27 +86,30 @@ class OnboardingPageLayout extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Skip link ─────────────────────────────────────────────
-                if (showSkip)
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 12, right: 24),
-                      child: GestureDetector(
-                        onTap: onSkip,
-                        child: Text(
-                          skipLabel ?? 'Skip',
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            color: OnboardingColors.skip,
-                            fontWeight: FontWeight.w400,
+                // ── Top Bar: Language Slider & Skip link ──────────────────
+                Padding(
+                  padding: const EdgeInsets.only(top: 12, left: 24, right: 24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const LanguageToggleSlider(isCompact: false),
+                      if (showSkip)
+                        GestureDetector(
+                          onTap: onSkip,
+                          child: Text(
+                            skipLabel ?? 'Skip',
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              color: OnboardingColors.skip,
+                              fontWeight: FontWeight.w400,
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  const SizedBox(height: 44), // keep consistent top spacing
+                        )
+                      else
+                        const SizedBox.shrink(),
+                    ],
+                  ),
+                ),
 
                 // ── Scrollable middle area ────────────────────────────────
                 Expanded(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:provider/provider.dart';
+import '../../providers/locale_provider.dart';
 import '../../services/legal_chat_service.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/onboarding_colors.dart';
@@ -171,6 +173,7 @@ class _LegalChatViewState extends State<LegalChatView> {
   }
 
   Widget _buildHeader() {
+    final locale = Provider.of<LocaleProvider>(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
@@ -193,16 +196,21 @@ class _LegalChatViewState extends State<LegalChatView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'Legal Help AI',
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    Flexible(
+                      child: Text(
+                        locale.tr('legal_chat_title'),
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Container(
                       width: 7,
                       height: 7,
@@ -214,22 +222,28 @@ class _LegalChatViewState extends State<LegalChatView> {
                   ],
                 ),
                 Text(
-                  'Indian Women\'s Rights • Instant Guidance',
+                  locale.tr('legal_chat_subtitle'),
                   style: GoogleFonts.inter(color: Colors.white54, fontSize: 11),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
           if (_messages.isNotEmpty)
             IconButton(
+              padding: const EdgeInsets.all(6),
+              constraints: const BoxConstraints(),
               icon: const Icon(Icons.delete_outline_rounded, color: Colors.white54, size: 20),
-              tooltip: 'Clear Chat',
+              tooltip: locale.isTelugu ? 'చాట్ తొలగించు' : 'Clear Chat',
               onPressed: _clearChat,
             ),
           if (widget.onClose != null)
             IconButton(
+              padding: const EdgeInsets.all(6),
+              constraints: const BoxConstraints(),
               icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70, size: 28),
-              tooltip: 'Collapse',
+              tooltip: locale.isTelugu ? 'మూసివేయి' : 'Collapse',
               onPressed: widget.onClose,
             ),
         ],
@@ -238,6 +252,7 @@ class _LegalChatViewState extends State<LegalChatView> {
   }
 
   Widget _buildEmptyState() {
+    final locale = Provider.of<LocaleProvider>(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       child: Column(
@@ -253,7 +268,7 @@ class _LegalChatViewState extends State<LegalChatView> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Know Your Rights',
+            locale.isTelugu ? 'మీ హక్కులను తెలుసుకోండి' : 'Know Your Rights',
             style: GoogleFonts.inter(
               color: Colors.white,
               fontSize: 20,
@@ -262,7 +277,9 @@ class _LegalChatViewState extends State<LegalChatView> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Ask questions about filing FIRs, workplace harassment, domestic violence protections, or legal aid.',
+            locale.isTelugu
+                ? 'జీరో ఎఫ్ఐఆర్, కార్యాలయ వేధింపులు, గృహహింస రక్షణలు లేదా ఉచిత న్యాయ సహాయం గురించి అడగండి.'
+                : 'Ask questions about filing FIRs, workplace harassment, domestic violence protections, or legal aid.',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(color: Colors.white54, fontSize: 13, height: 1.4),
           ),
@@ -272,11 +289,11 @@ class _LegalChatViewState extends State<LegalChatView> {
             runSpacing: 8,
             alignment: WrapAlignment.center,
             children: [
-              _buildSuggestionChip('How do I file a Zero FIR?'),
-              _buildSuggestionChip('My rights under Domestic Violence Act'),
-              _buildSuggestionChip('Workplace sexual harassment: POSH rules'),
-              _buildSuggestionChip('What is Section 498A IPC?'),
-              _buildSuggestionChip('How to get free legal aid in India?'),
+              _buildSuggestionChip(locale.isTelugu ? 'జీరో ఎఫ్ఐఆర్ ఎలా దాఖలు చేయాలి?' : 'How do I file a Zero FIR?'),
+              _buildSuggestionChip(locale.isTelugu ? 'గృహహింస చట్టం కింద నా హక్కులు' : 'My rights under Domestic Violence Act'),
+              _buildSuggestionChip(locale.isTelugu ? 'కార్యాలయ లైంగిక వేధింపుల POSH నిబంధనలు' : 'Workplace sexual harassment: POSH rules'),
+              _buildSuggestionChip(locale.isTelugu ? 'సెక్షన్ 498A అంటే ఏమిటి?' : 'What is Section 498A IPC?'),
+              _buildSuggestionChip(locale.isTelugu ? 'భారతదేశంలో ఉచిత న్యాయ సహాయం ఎలా పొందాలి?' : 'How to get free legal aid in India?'),
             ],
           ),
         ],
@@ -460,7 +477,7 @@ class _LegalChatViewState extends State<LegalChatView> {
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _sendMessage(),
                 decoration: InputDecoration(
-                  hintText: 'Ask about your legal rights...',
+                  hintText: Provider.of<LocaleProvider>(context, listen: false).tr('legal_chat_ask_hint'),
                   hintStyle: GoogleFonts.inter(color: Colors.white30, fontSize: 13),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 10),

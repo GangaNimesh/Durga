@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 
+import '../../providers/locale_provider.dart';
 import '../../theme/onboarding_colors.dart';
 
 /// Parsed structure of an assistant legal response
@@ -302,8 +304,8 @@ class LegalResponseCard extends StatelessWidget {
           _CollapsibleSection(
             icon: Icons.format_list_numbered_rounded,
             iconColor: OnboardingColors.coral,
-            title: 'Step-by-Step Procedure',
-            subtitle: '${parsed.steps.length} practical steps',
+            title: Provider.of<LocaleProvider>(context).isTelugu ? 'దశలవారీ విధానం' : 'Step-by-Step Procedure',
+            subtitle: '${parsed.steps.length} ${Provider.of<LocaleProvider>(context).isTelugu ? 'దశలు' : 'practical steps'}',
             child: Column(
               children: parsed.steps.map((step) => _buildStepItem(step)).toList(),
             ),
@@ -316,8 +318,8 @@ class LegalResponseCard extends StatelessWidget {
           _CollapsibleSection(
             icon: Icons.balance_rounded,
             iconColor: Colors.tealAccent,
-            title: 'Relevant Laws & Your Rights',
-            subtitle: '${parsed.laws.length} legal provisions',
+            title: Provider.of<LocaleProvider>(context).isTelugu ? 'సంబంధిత చట్టాలు & మీ హక్కులు' : 'Relevant Laws & Your Rights',
+            subtitle: '${parsed.laws.length} ${Provider.of<LocaleProvider>(context).isTelugu ? 'చట్టపరమైన నిబంధనలు' : 'legal provisions'}',
             child: Column(
               children: parsed.laws.map((law) => _buildLawItem(law)).toList(),
             ),
@@ -330,8 +332,8 @@ class LegalResponseCard extends StatelessWidget {
           _CollapsibleSection(
             icon: Icons.help_outline_rounded,
             iconColor: Colors.amberAccent,
-            title: 'Related FAQs & Next Questions',
-            subtitle: 'Tap any question to ask AI',
+            title: Provider.of<LocaleProvider>(context).isTelugu ? 'సంబంధిత ప్రశ్నలు & సమాధానాలు' : 'Related FAQs & Next Questions',
+            subtitle: Provider.of<LocaleProvider>(context).isTelugu ? 'AI ని అడగడానికి తాకండి' : 'Tap any question to ask AI',
             initiallyExpanded: true,
             child: Column(
               children: parsed.faqs.map((q) => _buildFaqItem(q)).toList(),
@@ -621,6 +623,8 @@ class _CollapsibleSectionState extends State<_CollapsibleSection> with SingleTic
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           widget.subtitle,
@@ -628,6 +632,8 @@ class _CollapsibleSectionState extends State<_CollapsibleSection> with SingleTic
                             color: Colors.white54,
                             fontSize: 11,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),

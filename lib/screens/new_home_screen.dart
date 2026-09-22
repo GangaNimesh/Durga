@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:provider/provider.dart';
+import '../providers/locale_provider.dart';
+import '../widgets/common/language_toggle_slider.dart';
 import '../services/supabase_service.dart';
 import '../theme/onboarding_colors.dart';
 import '../widgets/home/manage_contacts_sheet.dart';
@@ -16,6 +19,7 @@ import '../services/voice_intent.dart';
 import '../services/voice_command_service.dart';
 import 'solo_trip_screen.dart';
 import '../widgets/chat/legal_chat_view.dart';
+import '../services/nearby_emergency_service.dart';
 
 class NewHomeScreen extends StatefulWidget {
   const NewHomeScreen({super.key});
@@ -34,6 +38,10 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
   bool _isLoading = true;
   bool _isRecording = false;
   bool _helplinesExpanded = false;
+
+  NearbyPlace? _nearestPolice;
+  NearbyPlace? _nearestHospital;
+  bool _isLoadingNearby = false;
 
   // Volume button long-press detection
   DateTime? _volumeDownPressTime;
@@ -55,6 +63,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
     HardwareKeyboard.instance.addHandler(_handleHardwareKey);
 
     _loadData();
+    _loadNearbyFacilities();
   }
 
   @override
@@ -104,6 +113,63 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _loadNearbyFacilities() async {
+    if (!mounted) return;
+    setState(() => _isLoadingNearby = true);
+    try {
+      final results = await NearbyEmergencyService.instance.fetchNearestHelp();
+      if (mounted) {
+        setState(() {
+          _nearestPolice = results['police'];
+          _nearestHospital = results['hospital'];
+          _isLoadingNearby = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingNearby = false);
+    }
+  }
+
+  String _getPoliceTitle(LocaleProvider locale) {
+    if (locale.isTelugu) {
+      if (_nearestPolice == null ||
+          _nearestPolice!.name.trim().toLowerCase() == 'police station' ||
+          _nearestPolice!.name.trim().isEmpty) {
+        return 'పోలీస్ స్టేషన్';
+      }
+      return _nearestPolice!.name
+          .replaceAll(RegExp(r'Traffic Police Station', caseSensitive: false), 'ట్రాఫిక్ పోలీస్ స్టేషన్')
+          .replaceAll(RegExp(r'Police Station', caseSensitive: false), 'పోలీస్ స్టేషన్')
+          .replaceAll(RegExp(r'\bPS\b', caseSensitive: false), 'పోలీస్ స్టేషన్')
+          .replaceAll(RegExp(r'Police', caseSensitive: false), 'పోలీస్');
+    }
+    return _nearestPolice?.name ?? 'Police Station';
+  }
+
+  String _getHospitalTitle(LocaleProvider locale) {
+    if (locale.isTelugu) {
+      if (_nearestHospital == null ||
+          _nearestHospital!.name.trim().toLowerCase() == 'hospital' ||
+          _nearestHospital!.name.trim().isEmpty) {
+        return 'హాస్పిటల్';
+      }
+      return _nearestHospital!.name
+          .replaceAll(RegExp(r'Hospital', caseSensitive: false), 'హాస్పిటల్');
+    }
+    return _nearestHospital?.name ?? 'Hospital';
+  }
+
+  String _getFormattedDistance(NearbyPlace? place, LocaleProvider locale) {
+    if (place == null) {
+      return _isLoadingNearby
+          ? (locale.isTelugu ? 'గుర్తిస్తోంది...' : 'Locating...')
+          : (locale.isTelugu ? 'సమీపంలో' : 'Nearby');
+    }
+    return locale.isTelugu
+        ? '${place.distanceKm.toStringAsFixed(1)} కి.మీ.'
+        : place.formattedDistance;
   }
 
   void _triggerSOS() async {
@@ -202,6 +268,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
       );
     }
 
+    final locale = Provider.of<LocaleProvider>(context);
     final name = _user?['full_name'] ?? 'User';
     final firstName = name.split(' ').first;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
@@ -223,7 +290,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
                       children: [
                         _buildStatusPill(
                           icon: Icons.shield_outlined,
-                          text: 'Profile $_safetyScore%',
+                          text: '${locale.tr('home_profile')} $_safetyScore%',
                           iconColor: Colors.green,
                           onTap: () async {
                             final result = await Navigator.of(context).push(
@@ -235,16 +302,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
                           },
                         ),
                         const SizedBox(width: 12),
-                        _buildStatusPill(
-                          icon: Icons.people_outline,
-                          text: '${_activeContacts.length} contacts',
-                          iconColor: Colors.blueAccent,
-                          showDot: true,
-                          onTap: () async {
-                            await ManageContactsSheet.show(context);
-                            _loadData();
-                          },
-                        ),
+                        const LanguageToggleSlider(isCompact: true),
                         const Spacer(),
                         GestureDetector(
                           onTap: () {
@@ -267,7 +325,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
 
                     // ── Greeting ──
                     Text(
-                      'Hi, $firstName',
+                      '${locale.tr('home_greeting_prefix')}, $firstName',
                       style: GoogleFonts.inter(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -276,7 +334,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Your safety is our priority today.',
+                      locale.tr('home_safety_priority'),
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         color: Colors.white70,
@@ -331,7 +389,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
                                       const Icon(Icons.warning_amber_rounded, size: 48, color: Colors.white),
                                       const SizedBox(height: 8),
                                       Text(
-                                        'HOLD FOR\nSOS',
+                                        locale.isTelugu ? 'సహాయం కోసం\nనొక్కండి' : 'HOLD FOR\nSOS',
                                         textAlign: TextAlign.center,
                                         style: GoogleFonts.inter(
                                           fontSize: 18,
@@ -360,7 +418,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Trusted Contacts',
+                                  locale.isTelugu ? 'విశ్వసనీయ పరిచయాలు' : 'Trusted Contacts',
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -369,7 +427,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
                                 ),
                                 const SizedBox(height: 12),
                                 _activeContacts.isEmpty
-                                    ? Text('No contacts added', style: GoogleFonts.inter(color: Colors.white54))
+                                    ? Text(locale.isTelugu ? 'పరిచయాలు లేవు' : 'No contacts added', style: GoogleFonts.inter(color: Colors.white54))
                                     : Row(
                                         children: _activeContacts.asMap().entries.map((e) {
                                           final i = e.key;
@@ -404,7 +462,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
                               _loadData();
                             },
                             child: Text(
-                              'Manage',
+                              locale.isTelugu ? 'నిర్వహించండి' : 'Manage',
                               style: GoogleFonts.inter(color: OnboardingColors.coral, fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -413,16 +471,36 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
                     ),
                     const SizedBox(height: 16),
 
-
-
                     // ── Nearest Help Card ──
                     _buildCard(
                       padding: EdgeInsets.zero,
                       child: Column(
                         children: [
-                          _buildHelpRow(Icons.local_police, 'Police Station', '2.4 km'),
+                          _buildHelpRow(
+                            icon: Icons.local_police,
+                            title: _getPoliceTitle(locale),
+                            distance: _getFormattedDistance(_nearestPolice, locale),
+                            isLoading: _isLoadingNearby && _nearestPolice == null,
+                            onTap: () {
+                              NearbyEmergencyService.instance.openInGoogleMaps(
+                                type: 'police',
+                                place: _nearestPolice,
+                              );
+                            },
+                          ),
                           const Divider(height: 1, color: Colors.black12),
-                          _buildHelpRow(Icons.local_hospital, 'Hospital', '3.1 km'),
+                          _buildHelpRow(
+                            icon: Icons.local_hospital,
+                            title: _getHospitalTitle(locale),
+                            distance: _getFormattedDistance(_nearestHospital, locale),
+                            isLoading: _isLoadingNearby && _nearestHospital == null,
+                            onTap: () {
+                              NearbyEmergencyService.instance.openInGoogleMaps(
+                                type: 'hospital',
+                                place: _nearestHospital,
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -507,6 +585,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
   }
 
   Widget _buildHelplinesCard() {
+    final locale = Provider.of<LocaleProvider>(context);
     return _buildCard(
       padding: EdgeInsets.zero,
       child: Column(
@@ -522,7 +601,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
                   const SizedBox(width: 14),
                   Expanded(
                     child: Text(
-                      'Emergency Helplines',
+                      locale.tr('helplines_title'),
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -544,10 +623,10 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
             secondChild: Column(
               children: [
                 const Divider(height: 1, color: Colors.white10),
-                _buildHelplineRow('National Emergency', '112'),
-                _buildHelplineRow('Police', '100'),
-                _buildHelplineRow('Women Helpline', '181'),
-                _buildHelplineRow('Ambulance', '108'),
+                _buildHelplineRow(locale.isTelugu ? 'జాతీయ అత్యవసర' : 'National Emergency', '112'),
+                _buildHelplineRow(locale.isTelugu ? 'పోలీస్' : 'Police', '100'),
+                _buildHelplineRow(locale.isTelugu ? 'మహిళా హెల్ప్‌లైన్' : 'Women Helpline', '181'),
+                _buildHelplineRow(locale.isTelugu ? 'అంబులెన్స్' : 'Ambulance', '108'),
                 const SizedBox(height: 8),
               ],
             ),
@@ -559,11 +638,16 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildHelpRow(IconData icon, String title, String distance) {
+  Widget _buildHelpRow({
+    required IconData icon,
+    required String title,
+    required String distance,
+    required VoidCallback onTap,
+    bool isLoading = false,
+  }) {
     return InkWell(
-      onTap: () {
-        // Open map
-      },
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Row(
@@ -580,10 +664,34 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
             Expanded(
               child: Text(
                 title,
-                style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.white),
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14.5,
+                  color: Colors.white,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            Text(distance, style: GoogleFonts.inter(color: Colors.white54, fontSize: 13)),
+            const SizedBox(width: 8),
+            if (isLoading)
+              const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  color: OnboardingColors.coral,
+                ),
+              )
+            else
+              Text(
+                distance,
+                style: GoogleFonts.inter(
+                  color: OnboardingColors.coral,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
             const SizedBox(width: 8),
             const Icon(Icons.chevron_right, color: Colors.white54, size: 18),
           ],
@@ -701,6 +809,7 @@ class _AnimatedBottomDrawerState extends State<_AnimatedBottomDrawer> with Singl
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final drawerHeight = screenHeight * 0.88;
+    final locale = Provider.of<LocaleProvider>(context);
 
     return Stack(
       children: [
@@ -757,74 +866,76 @@ class _AnimatedBottomDrawerState extends State<_AnimatedBottomDrawer> with Singl
                               width: 38,
                               height: 4,
                               decoration: BoxDecoration(
-                                color: Colors.white30,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
+                              color: Colors.white30,
+                              borderRadius: BorderRadius.circular(2),
                             ),
-                            const SizedBox(height: 3),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.keyboard_arrow_up_rounded, color: OnboardingColors.coral, size: 14),
-                                const SizedBox(width: 3),
-                                Text(
-                                  'Swipe up for Legal AI Chat',
-                                  style: GoogleFonts.inter(
-                                    color: Colors.white60,
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                          ),
+                          const SizedBox(height: 3),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.keyboard_arrow_up_rounded, color: OnboardingColors.coral, size: 14),
+                              const SizedBox(width: 3),
+                              Text(
+                                locale.tr('drawer_swipe_up'),
+                                style: GoogleFonts.inter(
+                                  color: Colors.white60,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 2),
-
-                    // 5 Minimalist, Clean Grayed-Out Action Buttons
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildDockButton(
-                            Icons.phone_in_talk,
-                            'Fake Call',
-                            widget.onFakeCall,
-                          ),
-                          _buildDockButton(
-                            widget.isRecording ? Icons.stop : Icons.mic_none,
-                            widget.isRecording ? 'Stop' : 'Record',
-                            widget.onRecord,
-                            isStop: widget.isRecording,
-                          ),
-                          _buildDockButton(
-                            Icons.graphic_eq,
-                            'Voice',
-                            widget.onVoice,
-                          ),
-                          _buildDockButton(
-                            Icons.route,
-                            'Solo Trip',
-                            widget.onSoloTrip,
-                          ),
-                          _buildDockButton(
-                            Icons.videocam,
-                            'Video',
-                            widget.onVideoRec,
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+
+                  const SizedBox(height: 2),
+
+                  // 5 Minimalist, Clean Grayed-Out Action Buttons
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildDockButton(
+                          Icons.phone_in_talk,
+                          locale.tr('drawer_action_fakecall'),
+                          widget.onFakeCall,
+                        ),
+                        _buildDockButton(
+                          widget.isRecording ? Icons.stop : Icons.mic_none,
+                          widget.isRecording
+                              ? (locale.isTelugu ? 'ఆపు' : 'Stop')
+                              : (locale.isTelugu ? 'రికార్డ్' : 'Record'),
+                          widget.onRecord,
+                          isStop: widget.isRecording,
+                        ),
+                        _buildDockButton(
+                          Icons.graphic_eq,
+                          locale.isTelugu ? 'వాయిస్' : 'Voice',
+                          widget.onVoice,
+                        ),
+                        _buildDockButton(
+                          Icons.route,
+                          locale.tr('drawer_action_solotrip'),
+                          widget.onSoloTrip,
+                        ),
+                        _buildDockButton(
+                          Icons.videocam,
+                          locale.tr('drawer_action_video'),
+                          widget.onVideoRec,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ),
+      ),
 
         // ── 2. Expanded Legal AI Help Chat (Smooth GPU SlideTransition) ──
         AnimatedBuilder(

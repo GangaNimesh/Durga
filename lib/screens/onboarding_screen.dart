@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/locale_provider.dart';
 import '../theme/onboarding_colors.dart';
 import 'new_home_screen.dart';
 import '../widgets/onboarding/onboarding_page_layout.dart';
@@ -173,28 +175,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildSlide1() {
+    final locale = Provider.of<LocaleProvider>(context);
     return OnboardingPageLayout(
       pageIndex: 0,
       currentPage: _currentPage,
       onDotTapped: _onDotTapped,
       onSkip: _finishOnboarding,
-      headline: 'Safety Is A State\nOf Mind.',
-      body: 'Empower your journey with intuitive control and community-backed protection.',
-      buttonLabel: 'Get Started',
+      skipLabel: locale.tr('onboarding_skip'),
+      headline: locale.tr('onboarding_slide1_title'),
+      body: locale.tr('onboarding_slide1_body'),
+      buttonLabel: locale.tr('onboarding_get_started'),
       onButtonPressed: _nextPage,
       illustration: const ProtectionIllustration(size: 110),
     );
   }
 
   Widget _buildSlide2() {
+    final locale = Provider.of<LocaleProvider>(context);
     return OnboardingPageLayout(
       pageIndex: 1,
       currentPage: _currentPage,
       onDotTapped: _onDotTapped,
       onSkip: _finishOnboarding,
-      headline: "Let's Get You\nSet Up.",
-      body: 'We need your details to keep you and your contacts connected.',
-      buttonLabel: 'Continue',
+      skipLabel: locale.tr('onboarding_skip'),
+      headline: locale.tr('onboarding_slide2_title'),
+      body: locale.tr('onboarding_slide2_body'),
+      buttonLabel: locale.tr('onboarding_continue'),
       onButtonPressed: _nextPage,
       illustrationAboveHeadline: true,
       illustration: _Slide2Form(
@@ -206,15 +212,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildSlide3() {
+    final locale = Provider.of<LocaleProvider>(context);
     return OnboardingPageLayout(
       pageIndex: 2,
       currentPage: _currentPage,
       onDotTapped: _onDotTapped,
       onSkip: _finishOnboarding,
-      skipLabel: "I'll do this later",
-      headline: 'Add Someone\nYou Trust.',
-      body: "They'll be the first to know if you need help.",
-      buttonLabel: 'Finish Setup  →',
+      skipLabel: locale.tr('onboarding_later'),
+      headline: locale.tr('onboarding_slide3_title'),
+      body: locale.tr('onboarding_slide3_body'),
+      buttonLabel: locale.tr('onboarding_finish_setup'),
       onButtonPressed: _finishOnboarding,
       illustrationAboveHeadline: false,
       belowBodyContent: _Slide3Contacts(
@@ -277,20 +284,21 @@ class _Slide2Form extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locale = Provider.of<LocaleProvider>(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel('Full Name'),
+        _buildLabel(locale.tr('onboarding_full_name')),
         const SizedBox(height: 8),
         TextField(
           controller: nameController,
           style: GoogleFonts.inter(color: OnboardingColors.headline, fontSize: 15),
           textInputAction: TextInputAction.next,
-          decoration: _inputDecoration('Jane Doe'),
+          decoration: _inputDecoration(locale.tr('onboarding_full_name_hint')),
         ),
         const SizedBox(height: 16),
 
-        _buildLabel('Phone number'),
+        _buildLabel(locale.tr('onboarding_phone')),
         const SizedBox(height: 8),
         TextField(
           controller: phoneController,
@@ -321,18 +329,18 @@ class _Slide2Form extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        _buildLabel('Email address'),
+        _buildLabel(locale.tr('onboarding_email')),
         const SizedBox(height: 8),
         TextField(
           controller: emailController,
           keyboardType: TextInputType.emailAddress,
           style: GoogleFonts.inter(color: OnboardingColors.headline, fontSize: 15),
-          decoration: _inputDecoration('you@example.com'),
+          decoration: _inputDecoration(locale.tr('onboarding_email_hint')),
         ),
         const SizedBox(height: 12),
 
         Text(
-          "We'll only use this to keep you and your contacts connected.",
+          locale.tr('onboarding_slide2_body'),
           style: GoogleFonts.inter(
             fontSize: 12.5,
             color: OnboardingColors.body.withValues(alpha: 0.7),
@@ -361,6 +369,7 @@ class _Slide3Contacts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locale = Provider.of<LocaleProvider>(context);
     return Column(
       children: [
         GestureDetector(
@@ -385,7 +394,7 @@ class _Slide3Contacts extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Add emergency contact',
+                    locale.tr('onboarding_add_trusted_contact'),
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       color: OnboardingColors.body,
