@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/supabase_service.dart';
+import '../services/solo_trip_service.dart';
 import '../theme/onboarding_colors.dart';
 import 'onboarding_screen.dart';
 import 'voice_log_screen.dart';
@@ -128,7 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.white10),
                   ),
@@ -149,7 +150,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Switch(
                             value: _alwaysListening,
                             onChanged: _toggleVoiceListening,
-                            activeColor: OnboardingColors.coral,
+                            activeTrackColor: OnboardingColors.coral.withValues(alpha: 0.5),
+                            thumbColor: WidgetStateProperty.resolveWith(
+                              (states) => states.contains(WidgetState.selected)
+                                  ? OnboardingColors.coral
+                                  : Colors.white54,
+                            ),
                           ),
                         ],
                       ),
@@ -187,7 +193,117 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // 1. Instant Notification Test Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await SoloTripService.instance.triggerDebugCheckinNotification();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Test notification sent! Check your notification shade.'),
+                            backgroundColor: Colors.teal,
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.notifications_active, color: Colors.white),
+                    label: Text(
+                      'Test Check-in Notification (Instant)',
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal.shade700,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // 2. Solo Trip Live Status & Control Card
+                ListenableBuilder(
+                  listenable: SoloTripService.instance,
+                  builder: (context, _) {
+                    final isSoloActive = SoloTripService.instance.isActive;
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isSoloActive
+                            ? const Color(0xFF00E676).withValues(alpha: 0.08)
+                            : Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSoloActive ? const Color(0xFF00E676).withValues(alpha: 0.3) : Colors.white10,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                isSoloActive ? Icons.shield : Icons.shield_outlined,
+                                color: isSoloActive ? const Color(0xFF00E676) : Colors.white54,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                isSoloActive ? 'Solo Trip: ACTIVE' : 'Solo Trip: Inactive',
+                                style: GoogleFonts.inter(
+                                  color: isSoloActive ? const Color(0xFF00E676) : Colors.white70,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          if (isSoloActive)
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  await SoloTripService.instance.endSession();
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Active Solo Trip ended.')),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(Icons.stop_circle_outlined, color: Colors.redAccent, size: 18),
+                                label: Text(
+                                  'End Active Trip',
+                                  style: GoogleFonts.inter(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Colors.redAccent),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                ),
+                              ),
+                            )
+                          else
+                            Text(
+                              'Start Solo Trip from the bottom bar or Home Screen to begin automatic check-in tracking.',
+                              style: GoogleFonts.inter(color: Colors.white38, fontSize: 12),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
                 
+                // 3. Restart Onboarding
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -219,7 +335,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white10),
       ),

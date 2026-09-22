@@ -18,6 +18,7 @@ import '../widgets/voice/voice_command_overlay.dart';
 import '../services/voice_intent.dart';
 import '../services/voice_command_service.dart';
 import 'solo_trip_screen.dart';
+import '../services/solo_trip_service.dart';
 import '../widgets/chat/legal_chat_view.dart';
 import '../services/nearby_emergency_service.dart';
 
@@ -917,10 +918,26 @@ class _AnimatedBottomDrawerState extends State<_AnimatedBottomDrawer> with Singl
                           locale.isTelugu ? 'వాయిస్' : 'Voice',
                           widget.onVoice,
                         ),
-                        _buildDockButton(
-                          Icons.route,
-                          locale.tr('drawer_action_solotrip'),
-                          widget.onSoloTrip,
+                        ListenableBuilder(
+                          listenable: SoloTripService.instance,
+                          builder: (context, _) {
+                            final isSoloActive = SoloTripService.instance.isActive;
+                            return _buildDockButton(
+                              Icons.route,
+                              isSoloActive
+                                  ? (locale.isTelugu ? 'యాక్టివ్' : 'Active')
+                                  : locale.tr('drawer_action_solotrip'),
+                              () {
+                                if (isSoloActive) {
+                                  _showActiveSoloTripSheet(context, locale);
+                                } else {
+                                  widget.onSoloTrip();
+                                }
+                              },
+                              isActive: isSoloActive,
+                              activeColor: const Color(0xFF00E676),
+                            );
+                          },
                         ),
                         _buildDockButton(
                           Icons.videocam,
@@ -987,12 +1004,146 @@ class _AnimatedBottomDrawerState extends State<_AnimatedBottomDrawer> with Singl
     );
   }
 
+  void _showActiveSoloTripSheet(BuildContext context, LocaleProvider locale) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E131B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF00E676).withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.shield, color: Color(0xFF00E676), size: 24),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            locale.isTelugu ? 'సోలో ట్రిప్ రన్ అవుతోంది' : 'Solo Trip is Active',
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            locale.isTelugu 
+                                ? 'రక్షణ నిరంతరం పరిశీలిస్తోంది' 
+                                : 'Background tracking & check-ins active',
+                            style: GoogleFonts.inter(color: Colors.white60, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Check-in now button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      await SoloTripService.instance.confirmCheckin();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(locale.isTelugu ? 'చెక్-ఇన్ విజయవంతమైంది!' : 'Check-in confirmed! Stay safe.'),
+                            backgroundColor: Colors.teal,
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+                    label: Text(
+                      locale.isTelugu ? 'నేను సురక్షితంగా ఉన్నాను (చెక్-ఇన్)' : 'I am safe (Check-in Now)',
+                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal.shade700,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // End solo trip button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      await SoloTripService.instance.endSession();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(locale.isTelugu ? 'సోలో ట్రిప్ ముగిసింది.' : 'Solo Trip ended.'),
+                            backgroundColor: OnboardingColors.coral,
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.stop_circle_outlined, color: Colors.redAccent),
+                    label: Text(
+                      locale.isTelugu ? 'సోలో ట్రిప్ ముగించు' : 'End Solo Trip',
+                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.redAccent),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.redAccent),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildDockButton(
     IconData icon,
     String label,
     VoidCallback onTap, {
     bool isStop = false,
+    bool isActive = false,
+    Color? activeColor,
   }) {
+    final Color effectiveColor = isStop
+        ? Colors.redAccent
+        : (isActive ? (activeColor ?? const Color(0xFF00E676)) : Colors.white54);
+    final Color effectiveTextColor = isStop
+        ? Colors.redAccent
+        : (isActive ? (activeColor ?? const Color(0xFF00E676)) : Colors.white38);
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -1001,18 +1152,44 @@ class _AnimatedBottomDrawerState extends State<_AnimatedBottomDrawer> with Singl
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: isStop ? Colors.redAccent : Colors.white54,
-              size: 21,
+            Stack(
+              alignment: Alignment.topRight,
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  icon,
+                  color: effectiveColor,
+                  size: 21,
+                ),
+                if (isActive)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF00E676),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xFF00E676),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 3),
             Text(
               label,
               style: GoogleFonts.inter(
-                color: isStop ? Colors.redAccent : Colors.white38,
+                color: effectiveTextColor,
                 fontSize: 10,
-                fontWeight: FontWeight.w500,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
           ],
@@ -1021,3 +1198,4 @@ class _AnimatedBottomDrawerState extends State<_AnimatedBottomDrawer> with Singl
     );
   }
 }
+

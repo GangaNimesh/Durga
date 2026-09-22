@@ -231,6 +231,14 @@ class AppTranslations {
       en: 'Automatic check-in timer that alerts contacts if you do not arrive.',
       te: 'మీరు చేరకపోతే మీ పరిచయస్తులను హెచ్చరించే ఆటో చెక్-ఇన్ టైమర్.',
     ),
+    'solotrip_active': TranslationEntry(
+      en: 'Active',
+      te: 'యాక్టివ్',
+    ),
+    'solotrip_end': TranslationEntry(
+      en: 'End Trip',
+      te: 'ట్రిప్ ముగించు',
+    ),
 
     // ── Helplines ──
     'helplines_title': TranslationEntry(
