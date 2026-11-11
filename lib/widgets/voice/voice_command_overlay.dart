@@ -80,7 +80,7 @@ class _VoiceCommandOverlayState extends State<VoiceCommandOverlay> with SingleTi
 
     if (intent.type == VoiceIntentType.unknown) {
       setState(() {
-        _transcript = "Command not recognized";
+        _transcript = "Didn't catch that — try saying 'Help' or 'SOS'";
       });
       Future.delayed(const Duration(seconds: 2), widget.onDismiss);
       return;
@@ -94,6 +94,28 @@ class _VoiceCommandOverlayState extends State<VoiceCommandOverlay> with SingleTi
       _runCountdown();
     } else {
       widget.onIntentConfirmed(intent);
+    }
+  }
+
+  String _formatIntent(VoiceIntentType? type) {
+    switch (type) {
+      case VoiceIntentType.triggerSos:
+        return "Calling Emergency (100)";
+      case VoiceIntentType.fakeCall:
+        return "Simulating Fake Call";
+      case VoiceIntentType.startRecording:
+        return "Starting Evidence Video";
+      case VoiceIntentType.silentRecord:
+        return "Starting Silent Audio Record";
+      case VoiceIntentType.startCheckin:
+        return "Starting Solo Trip";
+      case VoiceIntentType.callContact:
+        return "Calling Primary Contact";
+      case VoiceIntentType.shareLocation:
+      case VoiceIntentType.sendLocationAll:
+        return "Sharing Live Location";
+      default:
+        return "Confirming Action";
     }
   }
 
@@ -168,7 +190,7 @@ class _VoiceCommandOverlayState extends State<VoiceCommandOverlay> with SingleTi
               padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Text(
                 _isCountdown 
-                    ? "Action: ${_detectedIntent?.type.name}" 
+                    ? _formatIntent(_detectedIntent?.type) 
                     : _transcript,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(

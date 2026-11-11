@@ -168,8 +168,8 @@ class AppTranslations {
       te: 'నమస్తే',
     ),
     'home_safety_priority': TranslationEntry(
-      en: 'Your safety is our priority today.',
-      te: 'మీ భద్రతే నేడు మా ప్రథమ ప్రాధాన్యత.',
+      en: 'Got your back, wherever today takes you.',
+      te: 'మీ రక్షణే బాధ్యత, మీరు ఎక్కడున్నా తోడుగా ఉంటాం.',
     ),
 
     // ── SOS Button & Warning ──
@@ -200,7 +200,7 @@ class AppTranslations {
       te: 'నకిలీ కాల్',
     ),
     'action_fake_call_desc': TranslationEntry(
-      en: 'Simulate incoming call to exit awkward or risky situations.',
+      en: 'Ring your phone with a realistic incoming call to slip away.',
       te: 'ఇబ్బందికరమైన పరిస్థితుల నుండి తప్పుకోవడానికి కాల్ అనుకరించండి.',
     ),
     'action_instant_video': TranslationEntry(
@@ -220,7 +220,7 @@ class AppTranslations {
       te: 'ఆడియో రికార్డ్ అవుతోంది...',
     ),
     'action_silent_record_desc': TranslationEntry(
-      en: 'Discreetly record background audio without alerting anyone.',
+      en: 'Discreet background audio recording saved securely to your device.',
       te: 'ఎవరికీ తెలియకుండా రహస్యంగా నేపధ్య ఆడియోను రికార్డ్ చేయండి.',
     ),
     'action_solo_trip': TranslationEntry(
@@ -292,8 +292,8 @@ class AppTranslations {
 
     // ── Bottom Drawer & 5 Action Buttons ──
     'drawer_swipe_up': TranslationEntry(
-      en: 'Swipe up for Legal AI Guide',
-      te: 'లీగల్ AI గైడ్ కోసం పైకి స్వైప్ చేయండి',
+      en: 'Swipe up for Durga AI',
+      te: 'దుర్గా AI కోసం పైకి స్వైప్ చేయండి',
     ),
     'drawer_action_safezone': TranslationEntry(
       en: 'Safe Zone',
@@ -318,20 +318,20 @@ class AppTranslations {
 
     // ── Legal Chat / Drawer ──
     'legal_chat_title': TranslationEntry(
-      en: 'Durga Legal Assistant',
-      te: 'దుర్గా లీగల్ అసిస్టెంట్',
+      en: 'Durga AI Assistant',
+      te: 'దుర్గా AI అసిస్టెంట్',
     ),
     'legal_chat_subtitle': TranslationEntry(
-      en: 'Know your rights under Indian Law',
-      te: 'భారతీయ చట్టాల ప్రకారం మీ హక్కులను తెలుసుకోండి',
+      en: 'Safety, Guidance & Legal AI',
+      te: 'భద్రత, మార్గదర్శనం & లీగల్ AI',
     ),
     'legal_chat_disclaimer': TranslationEntry(
-      en: 'Informational legal assistance, not a substitute for a lawyer.',
-      te: 'ఇది సమాచార సంబంధిత సహాయం మాత్రమే, న్యాయవాది సలహాకు ప్రత్యామ్నాయం కాదు.',
+      en: 'AI assistant for safety and general guidance.',
+      te: 'భద్రత మరియు సాధారణ మార్గదర్శనం కోసం AI అసిస్టెంట్.',
     ),
     'legal_chat_ask_hint': TranslationEntry(
-      en: 'Ask a legal question in English or తెలుగు...',
-      te: 'తెలుగు లేదా ఇంగ్లీషులో న్యాయపరమైన ప్రశ్న అడగండి...',
+      en: 'Ask Durga AI anything in English or తెలుగు...',
+      te: 'దుర్గా AI ని ఏదైనా అడగండి...',
     ),
     'legal_accordion_steps': TranslationEntry(
       en: 'Step-by-Step Procedure',

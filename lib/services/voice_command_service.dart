@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'voice_intent.dart';
 import 'supabase_service.dart';
@@ -16,58 +16,125 @@ class VoiceCommandService {
   
   bool _isInitialized = false;
   bool _isListening = false;
+  VoidCallback? _onTimeoutCallback;
+  Function(VoiceIntent intent)? _onCompleteCallback;
+  String _lastRecognizedWords = "";
+  String? _currentLocaleId;
 
   bool get isListening => _isListening;
 
-  Future<void> init() async {
-    if (_isInitialized) return;
-    _isInitialized = await _speech.initialize(
-      onError: (val) => debugPrint('STT Error: $val'),
-      onStatus: (val) => debugPrint('STT Status: $val'),
-    );
+  Future<void> init({bool force = false}) async {
+    if (_isInitialized && !force) return;
+
+    // Explicitly ensure microphone permission is granted
+    final mic = await Permission.microphone.status;
+    if (!mic.isGranted) {
+      final res = await Permission.microphone.request();
+      if (!res.isGranted) {
+        debugPrint("[STT] Microphone permission denied");
+        _isInitialized = false;
+        return;
+      }
+    }
+
+    try {
+      _isInitialized = await _speech.initialize(
+        debugLogging: true,
+        onError: (val) {
+          debugPrint('STT Error: ${val.errorMsg}, permanent: ${val.permanent}');
+          if (_isListening) {
+            _isListening = false;
+            _speech.stop();
+            if (_lastRecognizedWords.trim().isNotEmpty) {
+              final intent = _parseIntent(_lastRecognizedWords);
+              _onCompleteCallback?.call(intent);
+            } else {
+              _onTimeoutCallback?.call();
+            }
+          }
+          if (val.permanent) {
+            _isInitialized = false;
+          }
+        },
+        onStatus: (status) {
+          debugPrint('STT Status: $status');
+          if (status == 'done' || status == 'notListening') {
+            if (_isListening) {
+              _isListening = false;
+              if (_lastRecognizedWords.trim().isNotEmpty) {
+                final intent = _parseIntent(_lastRecognizedWords);
+                _onCompleteCallback?.call(intent);
+              } else {
+                _onTimeoutCallback?.call();
+              }
+            }
+          }
+        },
+      );
+
+      final systemLocale = await _speech.systemLocale();
+      _currentLocaleId = systemLocale?.localeId ?? 'en_IN';
+      debugPrint("[STT] Initialized: $_isInitialized, locale: $_currentLocaleId");
+    } catch (e) {
+      debugPrint("STT initialize exception: $e");
+      _isInitialized = false;
+    }
   }
 
-  /// Starts listening for a single voice command (timeout driven by OS usually)
+  /// Starts listening for a single voice command
   Future<void> startListening({
     required Function(String transcript) onPartial,
     required Function(VoiceIntent intent) onComplete,
     required VoidCallback onTimeout,
   }) async {
+    _lastRecognizedWords = "";
+    _onCompleteCallback = onComplete;
+    _onTimeoutCallback = onTimeout;
+
     if (!_isInitialized) await init();
     if (!_isInitialized) {
-      debugPrint("STT initialization failed");
-      return;
+      debugPrint("STT initialization failed, attempting force re-init");
+      await init(force: true);
+      if (!_isInitialized) {
+        onTimeout();
+        return;
+      }
     }
 
     _isListening = true;
-    String lastRecognizedWords = "";
-    
-    // We listen until the user stops talking or speech_to_text decides it's done.
-    await _speech.listen(
-      onResult: (result) {
-        lastRecognizedWords = result.recognizedWords;
-        onPartial(result.recognizedWords);
-        
-        if (result.finalResult) {
-          _isListening = false;
-          final intent = _parseIntent(result.recognizedWords);
-          onComplete(intent);
-        }
-      },
-      listenFor: const Duration(seconds: 10),
-      pauseFor: const Duration(seconds: 3),
-      partialResults: true,
-      cancelOnError: true,
-      listenMode: stt.ListenMode.confirmation,
-    );
+
+    try {
+      await _speech.listen(
+        onResult: (result) {
+          _lastRecognizedWords = result.recognizedWords;
+          onPartial(result.recognizedWords);
+          
+          if (result.finalResult) {
+            _isListening = false;
+            final intent = _parseIntent(result.recognizedWords);
+            onComplete(intent);
+          }
+        },
+        localeId: _currentLocaleId,
+        listenOptions: stt.SpeechListenOptions(
+          listenMode: stt.ListenMode.confirmation,
+          cancelOnError: false,
+          partialResults: true,
+        ),
+      );
+    } catch (e) {
+      debugPrint("STT listen exception: $e");
+      _isListening = false;
+      onTimeout();
+    }
 
     // Fallback if OS doesn't fire finalResult
-    Future.delayed(const Duration(seconds: 11), () {
+    Future.delayed(const Duration(seconds: 10), () {
       if (_isListening) {
         _isListening = false;
         _speech.stop();
-        if (lastRecognizedWords.isNotEmpty) {
-          final intent = _parseIntent(lastRecognizedWords);
+        if (_lastRecognizedWords.trim().isNotEmpty) {
+          final intent = _parseIntent(_lastRecognizedWords);
           onComplete(intent);
         } else {
           onTimeout();
@@ -101,22 +168,22 @@ class VoiceCommandService {
     }
 
     // SOS / Emergency variants
-    if (t.contains("trigger sos") || t.contains("help me") || t.contains("emergency") || t.contains("i need help")) {
+    if (t.contains("trigger sos") || t.contains("help me") || t.contains("emergency") || t.contains("i need help") || t.contains("sos") || t.contains("save me") || t.contains("danger")) {
       return VoiceIntent(type: VoiceIntentType.triggerSos, rawTranscript: transcript);
     }
 
     // Video Recording
-    if (t.contains("start recording") || t.contains("record video") || t.contains("video on")) {
+    if (t.contains("start recording") || t.contains("record video") || t.contains("video on") || t.contains("camera") || t.contains("film")) {
       return VoiceIntent(type: VoiceIntentType.startRecording, rawTranscript: transcript);
     }
 
     // Audio Recording
-    if (t.contains("silent record") || t.contains("record audio") || t.contains("audio recording")) {
+    if (t.contains("silent record") || t.contains("record audio") || t.contains("audio recording") || t.contains("voice memo") || t.contains("silent")) {
       return VoiceIntent(type: VoiceIntentType.silentRecord, rawTranscript: transcript);
     }
 
     // Fake Call
-    if (t.contains("fake call") || t.contains("pretend call")) {
+    if (t.contains("fake call") || t.contains("pretend call") || t.contains("call me") || t.contains("ring me") || t.contains("phone call")) {
       return VoiceIntent(type: VoiceIntentType.fakeCall, rawTranscript: transcript);
     }
 
@@ -142,8 +209,8 @@ class VoiceCommandService {
       return VoiceIntent(type: VoiceIntentType.callContact, contactName: name, rawTranscript: transcript);
     }
 
-    // Check in
-    if (t.contains("start check-in") || t.contains("start check in") || t.contains("solo trip mode")) {
+    // Check in / Solo trip
+    if (t.contains("start check-in") || t.contains("start check in") || t.contains("solo trip mode") || t.contains("check in") || t.contains("trip") || t.contains("solo") || t.contains("track me")) {
       return VoiceIntent(type: VoiceIntentType.startCheckin, rawTranscript: transcript);
     }
 
@@ -160,16 +227,12 @@ class VoiceCommandService {
   }
 
   Future<void> executeIntent(VoiceIntent intent, BuildContext context) async {
-    // We log it right before execution
     await SupabaseService.instance.logVoiceCommand(
-      wakeDetected: false, // We'll update this in Phase 1b
+      wakeDetected: false,
       transcript: intent.rawTranscript,
       matchedIntent: intent.type.toString(),
       actionTaken: 'Executed',
       cancelled: false,
     );
-
-    // Depending on intent, trigger actions here or let the UI layer handle routing
-    // For MVP, we let UI overlay handle navigation/cancellation logic before calling action
   }
 }

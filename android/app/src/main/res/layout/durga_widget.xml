@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@drawable/widget_background"
+    android:padding="12dp">
+
+    <!-- Header: Shield vector + DURGA text -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="6dp">
+
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:src="@drawable/ic_shield_small"
+            android:contentDescription="Durga Shield" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="  DURGA"
+            android:textColor="#FFFFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.18" />
+    </LinearLayout>
+
+    <!-- SOS Button — circular coral button -->
+    <LinearLayout
+        android:id="@+id/btn_sos"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:background="@drawable/sos_button_bg"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_gravity="center"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="8dp">
+
+        <ImageView
+            android:id="@+id/btn_sos_icon"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/ic_emergency"
+            android:layout_marginBottom="2dp"
+            android:contentDescription="Emergency SOS" />
+
+        <TextView
+            android:id="@+id/btn_sos_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SOS"
+            android:textColor="#FFFFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium" />
+    </LinearLayout>
+
+    <!-- Row of 3 action buttons: Fake Call | Record | Voice -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="2dp">
+
+        <!-- Fake Call -->
+        <LinearLayout
+            android:id="@+id/btn_fake_call"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp">
+
+            <FrameLayout
+                android:id="@+id/btn_fake_call_bg"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/action_button_bg">
+
+                <ImageView
+                    android:id="@+id/btn_fake_call_icon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_phone"
+                    android:contentDescription="Fake Call" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/btn_fake_call_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Fake Call"
+                android:textColor="#99FFFFFF"
+                android:textSize="10sp"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif" />
+        </LinearLayout>
+
+        <!-- Record -->
+        <LinearLayout
+            android:id="@+id/btn_record"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp">
+
+            <FrameLayout
+                android:id="@+id/btn_record_bg"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/action_button_bg">
+
+                <ImageView
+                    android:id="@+id/btn_record_icon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_mic"
+                    android:contentDescription="Record" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/btn_record_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Record"
+                android:textColor="#99FFFFFF"
+                android:textSize="10sp"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif" />
+        </LinearLayout>
+
+        <!-- Voice -->
+        <LinearLayout
+            android:id="@+id/btn_voice"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp">
+
+            <FrameLayout
+                android:id="@+id/btn_voice_bg"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/action_button_bg">
+
+                <ImageView
+                    android:id="@+id/btn_voice_icon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_voice"
+                    android:contentDescription="Voice Command" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/btn_voice_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Voice"
+                android:textColor="#99FFFFFF"
+                android:textSize="10sp"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

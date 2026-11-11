@@ -8,8 +8,11 @@ import 'providers/locale_provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/supabase_service.dart';
 import 'services/solo_trip_service.dart';
+import 'services/widget_service.dart';
+import 'services/safety_notification_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/new_home_screen.dart';
+import 'screens/fake_call_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +43,20 @@ void main() async {
     debugPrint("SoloTripService init error: $e");
   }
 
+  // Initialize the home-screen widget bridge
+  try {
+    await WidgetService.instance.init();
+  } catch (e) {
+    debugPrint("WidgetService init error: $e");
+  }
+
+  // Initialize lock screen safety notification widget
+  try {
+    await SafetyNotificationService.instance.init();
+  } catch (e) {
+    debugPrint("SafetyNotificationService init error: $e");
+  }
+
   runApp(const DurgaApp());
 }
 
@@ -56,7 +73,24 @@ class DurgaApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+        navigatorKey: WidgetService.instance.navigatorKey,
         home: const AppEntryGate(),
+        routes: {
+          '/fake-call': (_) => const FakeCallScreen(),
+          // /record and /voice are handled via onGenerateRoute below
+          // because they need the home screen context.
+        },
+        onGenerateRoute: (settings) {
+          // Deep-link routes from the widget that aren't simple pushes.
+          // /record and /voice are handled by navigating to NewHomeScreen
+          // with an argument that triggers the action on mount.
+          if (settings.name == '/record' || settings.name == '/voice') {
+            return MaterialPageRoute(
+              builder: (_) => NewHomeScreen(widgetAction: settings.name),
+            );
+          }
+          return null;
+        },
       ),
     );
   }
@@ -89,6 +123,21 @@ class _AppEntryGateState extends State<AppEntryGate> {
         _onboardingComplete = complete;
         _resolved = true;
       });
+    }
+
+    // If launched from widget tap, navigate to the pending route
+    if (_onboardingComplete) {
+      final pending = WidgetService.instance.pendingRoute;
+      if (pending != null) {
+        WidgetService.instance.pendingRoute = null;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (pending == '/fake-call') {
+            Navigator.of(context).pushNamed(pending);
+          } else {
+            WidgetService.instance.handleAction(pending);
+          }
+        });
+      }
     }
   }
 

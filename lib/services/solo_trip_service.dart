@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'supabase_service.dart';
+import 'safety_notification_service.dart';
 
 @pragma('vm:entry-point')
 void soloTripNotificationTapBackground(NotificationResponse response) {
@@ -13,6 +14,10 @@ void soloTripNotificationTapBackground(NotificationResponse response) {
     SoloTripService.instance.confirmCheckin();
   } else if (response.actionId == 'end_trip' || response.payload == 'end_trip') {
     SoloTripService.instance.endSession();
+  } else if (response.actionId != null && response.actionId!.startsWith('safety_action_')) {
+    SafetyNotificationService.instance.handleAction(response.actionId!);
+  } else if (response.payload == 'safety_widget') {
+    SafetyNotificationService.instance.showLockScreenNotification();
   }
 }
 
@@ -108,6 +113,10 @@ class SoloTripService extends ChangeNotifier {
       await confirmCheckin();
     } else if (response.actionId == 'end_trip' || response.payload == 'end_trip') {
       await endSession();
+    } else if (response.actionId != null && response.actionId!.startsWith('safety_action_')) {
+      await SafetyNotificationService.instance.handleAction(response.actionId!);
+    } else if (response.payload == 'safety_widget') {
+      await SafetyNotificationService.instance.showLockScreenNotification();
     }
   }
 
@@ -195,8 +204,8 @@ class SoloTripService extends ChangeNotifier {
     const NotificationDetails details = NotificationDetails(android: androidDetails);
     await _notificationsPlugin.show(
       1000,
-      '🛡️ Solo Trip Active',
-      'Durga is monitoring your journey. Checking in every $intervalMinutes min.',
+      'Solo Trip in Progress',
+      'Durga is watching your back. Next check-in in $intervalMinutes min.',
       details,
       payload: 'active_status',
     );
@@ -234,10 +243,10 @@ class SoloTripService extends ChangeNotifier {
     const NotificationDetails details = NotificationDetails(android: androidDetails);
     await _notificationsPlugin.show(
       isDebug ? 999 : 1001,
-      isDebug ? '⚠️ [DEBUG] Safety Check-in Test' : '🚨 Safety Check-in Required',
+      isDebug ? 'Safety Check-in (Test)' : 'Safety Check-in Required',
       isDebug 
-          ? 'Notification Test: Tap "I am safe" to confirm or "Stop Trip" to end.'
-          : 'Please confirm your safety. Grace period has started.',
+          ? 'Tap "I am safe" to confirm or "Stop Trip" to finish.'
+          : 'Quick check-in: Tap "I am safe" to confirm you are okay.',
       details,
       payload: isDebug ? 'confirm_checkin' : 'confirm_checkin',
     );

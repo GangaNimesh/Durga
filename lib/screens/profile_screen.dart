@@ -1,9 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:open_file/open_file.dart';
 
 import '../services/supabase_service.dart';
 import '../services/solo_trip_service.dart';
+import '../services/safety_notification_service.dart';
 import '../theme/onboarding_colors.dart';
 import 'onboarding_screen.dart';
 import 'voice_log_screen.dart';
@@ -19,22 +24,107 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
   bool _alwaysListening = false;
+  List<FileSystemEntity> _recordings = [];
 
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
+    _loadRecordings();
   }
 
   Future<void> _loadUserProfile() async {
-    final user = await SupabaseService.instance.getUser();
-    final voiceSettings = await SupabaseService.instance.getVoiceSettings();
-    if (mounted) {
-      setState(() {
-        _userData = user;
-        _alwaysListening = voiceSettings?['always_listening'] ?? false;
-        _isLoading = false;
+    try {
+      final user = await SupabaseService.instance.getUser();
+      Map<String, dynamic>? voiceSettings;
+      try {
+        voiceSettings = await SupabaseService.instance.getVoiceSettings();
+      } catch (e) {
+        debugPrint('Could not load voice settings: $e');
+      }
+      if (mounted) {
+        setState(() {
+          _userData = user;
+          _alwaysListening = voiceSettings?['always_listening'] ?? false;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading user profile: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _loadRecordings() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final allFiles = dir.listSync();
+      final recordings = allFiles.where((f) {
+        if (f is! File) return false;
+        final name = f.path.split(Platform.pathSeparator).last.toLowerCase();
+        return name.startsWith('durga_record') && name.endsWith('.m4a');
+      }).toList();
+
+      // Also check for video recordings from camera (in cache/temp dirs)
+      final cacheDir = await getTemporaryDirectory();
+      final cacheDirFiles = cacheDir.listSync(recursive: true);
+      final videoRecordings = cacheDirFiles.where((f) {
+        if (f is! File) return false;
+        final name = f.path.split(Platform.pathSeparator).last.toLowerCase();
+        return name.endsWith('.mp4');
+      }).toList();
+
+      recordings.addAll(videoRecordings);
+
+      // Sort by last modified, newest first
+      recordings.sort((a, b) {
+        final aStat = a.statSync();
+        final bStat = b.statSync();
+        return bStat.modified.compareTo(aStat.modified);
       });
+
+      if (mounted) {
+        setState(() => _recordings = recordings);
+      }
+    } catch (e) {
+      debugPrint('Error loading recordings: $e');
+    }
+  }
+
+  Future<void> _deleteRecording(FileSystemEntity file) async {
+    try {
+      await file.delete();
+      _loadRecordings();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Recording deleted'), backgroundColor: Colors.redAccent),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error deleting recording: $e');
+    }
+  }
+
+  Future<void> _shareRecording(File file) async {
+    try {
+      await Share.shareXFiles([XFile(file.path)]);
+    } catch (e) {
+      debugPrint('Error sharing recording: $e');
+    }
+  }
+
+  Future<void> _openRecording(File file) async {
+    try {
+      await OpenFile.open(file.path);
+    } catch (e) {
+      debugPrint('Error opening recording: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cannot open this file'), backgroundColor: Colors.redAccent),
+        );
+      }
     }
   }
 
@@ -180,7 +270,100 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 48),
+                const SizedBox(height: 32),
+
+                // Widgets & Lock Screen Section
+                Text(
+                  'WIDGETS & LOCK SCREEN',
+                  style: GoogleFonts.inter(
+                    color: Colors.white54,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Lock Screen Safety Widget',
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Persistent SOS, Fake Call, Record & Voice controls visible on lock screen',
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white54,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: SafetyNotificationService.instance.isEnabled,
+                            onChanged: (val) async {
+                              await SafetyNotificationService.instance.setEnabled(val);
+                              setState(() {});
+                            },
+                            activeThumbColor: OnboardingColors.coral,
+                          ),
+                        ],
+                      ),
+                      const Divider(color: Colors.white10, height: 24),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.widgets_outlined, color: OnboardingColors.coral, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Home Screen Widget: Long-press your home screen → Widgets → select "Durga Pocket Guard" to add the 4x2 quick-action bar.',
+                              style: GoogleFonts.inter(
+                                color: Colors.white70,
+                                fontSize: 12,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Recordings Section
+                Text(
+                  'RECORDINGS',
+                  style: GoogleFonts.inter(
+                    color: Colors.white54,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildRecordingsSection(),
+                const SizedBox(height: 32),
 
                 // Debug Tools Section
                 Text(
@@ -328,6 +511,196 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildRecordingsSection() {
+    if (_recordings.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.folder_open, color: Colors.white24, size: 40),
+            const SizedBox(height: 12),
+            Text(
+              'No recordings yet',
+              style: GoogleFonts.inter(color: Colors.white54, fontSize: 14),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Use the Record or Video buttons to create recordings',
+              style: GoogleFonts.inter(color: Colors.white38, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+            child: Row(
+              children: [
+                const Icon(Icons.library_music, color: OnboardingColors.coral, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  '${_recordings.length} Recording${_recordings.length == 1 ? '' : 's'}',
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(color: Colors.white10, height: 1),
+          ListView.separated(
+            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            itemCount: _recordings.length,
+            separatorBuilder: (_, __) => const Divider(color: Colors.white10, height: 1),
+            itemBuilder: (context, index) {
+              final file = _recordings[index] as File;
+              final fileName = file.path.split(Platform.pathSeparator).last;
+              final stat = file.statSync();
+              final sizeKb = (stat.size / 1024).toStringAsFixed(1);
+              final sizeMb = (stat.size / (1024 * 1024)).toStringAsFixed(1);
+              final sizeText = stat.size > 1024 * 1024 ? '$sizeMb MB' : '$sizeKb KB';
+              final date = stat.modified;
+              final dateStr = '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+
+              final isVideo = fileName.toLowerCase().endsWith('.mp4');
+              final isAudio = fileName.toLowerCase().endsWith('.m4a');
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    // Type icon
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: (isVideo ? Colors.deepPurple : Colors.teal).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        isVideo ? Icons.videocam : Icons.mic,
+                        color: isVideo ? Colors.deepPurple.shade200 : Colors.tealAccent,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // File info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            fileName,
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              // Type badge
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: (isVideo ? Colors.deepPurple : Colors.teal).withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  isVideo ? 'VIDEO' : (isAudio ? 'AUDIO' : 'FILE'),
+                                  style: GoogleFonts.inter(
+                                    color: isVideo ? Colors.deepPurple.shade200 : Colors.tealAccent,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '$sizeText • $dateStr',
+                                style: GoogleFonts.inter(color: Colors.white38, fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Action buttons
+                    IconButton(
+                      icon: const Icon(Icons.play_arrow, color: Colors.white54, size: 20),
+                      onPressed: () => _openRecording(file),
+                      tooltip: 'Open',
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.share, color: Colors.white54, size: 18),
+                      onPressed: () => _shareRecording(file),
+                      tooltip: 'Share',
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            backgroundColor: const Color(0xFF2A1A24),
+                            title: Text('Delete Recording?', style: GoogleFonts.inter(color: Colors.white)),
+                            content: Text(
+                              'This will permanently delete "$fileName".',
+                              style: GoogleFonts.inter(color: Colors.white70),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: Text('Cancel', style: GoogleFonts.inter(color: Colors.white54)),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  _deleteRecording(file);
+                                },
+                                child: Text('Delete', style: GoogleFonts.inter(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      tooltip: 'Delete',
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 

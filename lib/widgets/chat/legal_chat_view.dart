@@ -188,7 +188,7 @@ class _LegalChatViewState extends State<LegalChatView> {
               color: OnboardingColors.coral.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.balance, color: OnboardingColors.coral, size: 20),
+            child: const Icon(Icons.auto_awesome, color: OnboardingColors.coral, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -264,11 +264,11 @@ class _LegalChatViewState extends State<LegalChatView> {
               color: OnboardingColors.coral.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.balance_rounded, color: OnboardingColors.coral, size: 40),
+            child: const Icon(Icons.auto_awesome, color: OnboardingColors.coral, size: 36),
           ),
           const SizedBox(height: 16),
           Text(
-            locale.isTelugu ? 'మీ హక్కులను తెలుసుకోండి' : 'Know Your Rights',
+            locale.isTelugu ? 'దుర్గా AI అసిస్టెంట్' : 'Durga AI Assistant',
             style: GoogleFonts.inter(
               color: Colors.white,
               fontSize: 20,
@@ -278,8 +278,8 @@ class _LegalChatViewState extends State<LegalChatView> {
           const SizedBox(height: 8),
           Text(
             locale.isTelugu
-                ? 'జీరో ఎఫ్ఐఆర్, కార్యాలయ వేధింపులు, గృహహింస రక్షణలు లేదా ఉచిత న్యాయ సహాయం గురించి అడగండి.'
-                : 'Ask questions about filing FIRs, workplace harassment, domestic violence protections, or legal aid.',
+                ? 'భద్రతా సూచనలు, చట్టపరమైన హక్కులు, అత్యవసర మార్గదర్శనం లేదా సాధారణ సహాయం గురించి అడగండి.'
+                : 'Ask questions about safety tips, legal rights, emergency steps, or general assistance.',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(color: Colors.white54, fontSize: 13, height: 1.4),
           ),

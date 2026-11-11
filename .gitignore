@@ -57,3 +57,5 @@ backend/uploads/*
 backend/uvicorn*.log
 **/.pytest_cache/
 local.properties
+
+.env
