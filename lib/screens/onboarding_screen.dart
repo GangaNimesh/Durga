@@ -186,7 +186,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: locale.tr('onboarding_slide1_body'),
       buttonLabel: locale.tr('onboarding_get_started'),
       onButtonPressed: _nextPage,
-      illustration: const ProtectionIllustration(size: 110),
+      illustration: const ProtectionIllustration(size: 130),
     );
   }
 
@@ -224,6 +224,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       buttonLabel: locale.tr('onboarding_finish_setup'),
       onButtonPressed: _finishOnboarding,
       illustrationAboveHeadline: false,
+      topSpacing: 56,
       belowBodyContent: _Slide3Contacts(
         contacts: _selectedContacts,
         onAddPressed: _pickContact,

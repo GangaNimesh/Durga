@@ -78,6 +78,10 @@ dependencies:
   google_generative_ai: ^0.4.7
   flutter_local_notifications: ^19.5.0
   flutter_foreground_task: ^9.2.2
+  home_widget: ^0.7.0
+  share_plus: ^10.1.4
+  open_file: ^3.5.10
+  path_provider: ^2.1.5
   open_wake_word:
     path: d:\Downloads2\cap\open_wake_word
 

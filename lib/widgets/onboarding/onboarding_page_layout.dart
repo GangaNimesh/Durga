@@ -28,6 +28,7 @@ class OnboardingPageLayout extends StatelessWidget {
     this.onSkip,
     this.showSkip = true,
     this.illustrationAboveHeadline = true,
+    this.topSpacing,
     this.onDotTapped,
     this.belowBodyContent,
   });
@@ -44,6 +45,7 @@ class OnboardingPageLayout extends StatelessWidget {
   final VoidCallback? onSkip;
   final bool showSkip;
   final bool illustrationAboveHeadline;
+  final double? topSpacing;
   final ValueChanged<int>? onDotTapped;
 
   /// Optional content that appears below the body text (e.g. contact cards on
@@ -119,9 +121,11 @@ class OnboardingPageLayout extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (illustrationAboveHeadline) ...[
-                          const SizedBox(height: 32),
+                          SizedBox(height: topSpacing ?? 32),
                           illustration,
                           const SizedBox(height: 36),
+                        ] else ...[
+                          SizedBox(height: topSpacing ?? 52),
                         ],
 
                         // ── Headline ──────────────────────────────────────

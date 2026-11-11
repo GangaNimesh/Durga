@@ -21,9 +21,15 @@ import 'solo_trip_screen.dart';
 import '../services/solo_trip_service.dart';
 import '../widgets/chat/legal_chat_view.dart';
 import '../services/nearby_emergency_service.dart';
+import '../services/widget_service.dart';
+import '../services/safety_notification_service.dart';
 
 class NewHomeScreen extends StatefulWidget {
-  const NewHomeScreen({super.key});
+  /// Optional deep-link action from the home screen widget.
+  /// Values: '/record' or '/voice'. Null when opened normally.
+  final String? widgetAction;
+
+  const NewHomeScreen({super.key, this.widgetAction});
 
   @override
   State<NewHomeScreen> createState() => _NewHomeScreenState();
@@ -51,6 +57,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
+
     _sosPulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -65,10 +72,43 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
 
     _loadData();
     _loadNearbyFacilities();
+
+    // Ensure persistent lock screen notification is active
+    SafetyNotificationService.instance.showLockScreenNotification();
+
+    // Listen to real-time widget actions dispatched while app is open
+    WidgetService.widgetActionNotifier.addListener(_onWidgetActionChanged);
+
+    // Handle deep-link actions from cold-start
+    if (widget.widgetAction != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handleWidgetAction(widget.widgetAction!);
+      });
+    }
+  }
+
+  void _onWidgetActionChanged() {
+    final action = WidgetService.widgetActionNotifier.value;
+    if (action != null && mounted) {
+      _handleWidgetAction(action);
+    }
+  }
+
+  /// Execute an action triggered by the home screen widget.
+  void _handleWidgetAction(String action) {
+    switch (action) {
+      case '/record':
+        _toggleRecord();
+        break;
+      case '/voice':
+        _showVoiceOverlay();
+        break;
+    }
   }
 
   @override
   void dispose() {
+    WidgetService.widgetActionNotifier.removeListener(_onWidgetActionChanged);
     HardwareKeyboard.instance.removeHandler(_handleHardwareKey);
     _sosPulseController.dispose();
     super.dispose();
@@ -203,11 +243,25 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
       debugPrint("Voice logging error: $e");
     }
 
-    // Simple execution logic for the MVP
+    // User-friendly feedback
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Executing voice command: ${intent.type.name}")),
-      );
+      final msg = switch (intent.type) {
+        VoiceIntentType.triggerSos => "Connecting emergency...",
+        VoiceIntentType.fakeCall => "Simulating incoming call...",
+        VoiceIntentType.startRecording => "Launching video evidence...",
+        VoiceIntentType.silentRecord => "Discreet recording toggled",
+        VoiceIntentType.startCheckin => "Opening Solo Trip...",
+        _ => null,
+      };
+      if (msg != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
 
     switch (intent.type) {
@@ -244,17 +298,31 @@ class _NewHomeScreenState extends State<NewHomeScreen> with SingleTickerProvider
     if (_isRecording) {
       final path = await SilentRecorder.instance.stopRecording();
       if (mounted) setState(() => _isRecording = false);
+      await WidgetService.instance.updateWidgetData({'is_recording': false});
+      await SafetyNotificationService.instance.showLockScreenNotification();
       if (mounted && path != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Saved to: $path')),
+          const SnackBar(
+            content: Text('Discreet audio saved securely.'),
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } else {
       await SilentRecorder.instance.startRecording();
       if (mounted) {
         setState(() => _isRecording = SilentRecorder.instance.isRecording);
+      }
+      await WidgetService.instance.updateWidgetData({'is_recording': true});
+      await SafetyNotificationService.instance.showLockScreenNotification();
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Silent recording started')),
+          const SnackBar(
+            content: Text('Discreet audio recording active.'),
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
