@@ -551,8 +551,9 @@ durga/
 | **User Auth** | ✅ Live | Supabase email/password auth |
 | **Keyword Threat Triage** | ✅ Live | Rule-based keyword scoring (not AI/ML) |
 | **Safety Profile** | ✅ Live | Personal, medical, and emergency info |
-| **FCM Push Notifications** | 🚧 WIP | Config exists, implementation in progress |
-| **Google Maps View** | 🚧 WIP | API key wired, map screen pending |
+| **FCM Push Notifications** | ✅ Live | Config exists, implementation in progress |
+| **Google Maps View** | ✅ Live | API key wired, map screen pending |
+| **Safest Route** | ✅ Live | Customized route based on the latest relevant user reviews|
 
 
 ---
@@ -561,26 +562,26 @@ durga/
 
 ```mermaid
 graph LR
-    A["v1.0 — Core Safety 🛡️"] --> B["v1.5 — Smart Alerts 📡"]
-    B --> C["v2.0 — AI-Powered 🤖"]
-    C --> D["v3.0 — Ecosystem 🌐"]
+    A["v1.0 — Core Safety "] --> B["v1.5 — Smart Alerts 📡"]
+    B --> C["v2.0 — AI-Powered "]
+    C --> D["v3.0 — Ecosystem "]
 
-    A -.- A1["SOS System ✅"]
-    A -.- A2["Voice Commands ✅"]
-    A -.- A3["Solo Trip ✅"]
-    A -.- A4["Legal AI Chat ✅"]
+    A -.- A1["SOS System "]
+    A -.- A2["Voice Commands "]
+    A -.- A3["Solo Trip "]
+    A -.- A4["Legal AI Chat "]
 
-    B -.- B1["FCM Push Alerts 🚧"]
-    B -.- B2["SMS to Contacts 📋"]
-    B -.- B3["Google Maps View 🚧"]
+    B -.- B1["FCM Push Alerts "]
+    B -.- B2["SMS to Contacts "]
+    B -.- B3["Google Maps View "]
 
-    C -.- C1["Predictive Threats 📋"]
-    C -.- C2["Community Safety Map 📋"]
-    C -.- C3["Smart Route Planning 📋"]
+    C -.- C1["Predictive Threats "]
+    C -.- C2["Community Safety Map "]
+    C -.- C3["Smart Route Planning "]
 
-    D -.- D1["iOS App 📋"]
-    D -.- D2["Wearable Integration 📋"]
-    D -.- D3["Offline SOS 📋"]
+    D -.- D1["iOS App "]
+    D -.- D2["Wearable Integration "]
+    D -.- D3["Offline SOS "]
 ```
 
 ---
