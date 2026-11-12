@@ -562,7 +562,7 @@ durga/
 
 ```mermaid
 graph LR
-    A["v1.0 — Core Safety "] --> B["v1.5 — Smart Alerts 📡"]
+    A["v1.0 — Core Safety "] --> B["v1.5 — Smart Alerts "]
     B --> C["v2.0 — AI-Powered "]
     C --> D["v3.0 — Ecosystem "]
 
