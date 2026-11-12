@@ -144,17 +144,17 @@ Never travel alone without a safety net.
 Know your rights — powered by **Google Gemini 2.0 Flash** and a comprehensive Indian women's legal knowledge base.
 
 - **378-Line Legal Guide** covering:
-  - 📝 Filing FIRs and Zero FIRs
-  - 🏠 Protection of Women from Domestic Violence Act, 2005
-  - 🏢 Sexual Harassment at Workplace Act, 2013 (PoSH)
-  - 💍 Dowry Prohibition Act, 1961
-  - ⚖️ Key IPC / BNS Sections for women's safety
-  - 💻 Cyber Harassment & IT Act
-  - 👶 POCSO Act, 2012
-  - 💰 Maintenance & Alimony Rights
-  - 🆓 Legal Aid & Free Counsel
-  - 🏛️ National Commission for Women (NCW)
-  - ☎️ Emergency Helplines & Resources
+  -  Filing FIRs and Zero FIRs
+  -  Protection of Women from Domestic Violence Act, 2005
+  -  Sexual Harassment at Workplace Act, 2013 (PoSH)
+  -  Dowry Prohibition Act, 1961
+  -  Key IPC / BNS Sections for women's safety
+  -  Cyber Harassment & IT Act
+  -  POCSO Act, 2012
+  -  Maintenance & Alimony Rights
+  -  Legal Aid & Free Counsel
+  -  National Commission for Women (NCW)
+  -  Emergency Helplines & Resources
 - **Contextual AI Chat** — Multi-turn conversations with Gemini understanding your situation
 - **Suggested Questions** — Pre-built prompts like _"How do I file an FIR?"_ and _"What are my workplace harassment rights?"_
 - **Bilingual Responses** — AI responds in your preferred language
@@ -215,21 +215,6 @@ Safety in your mother tongue.
 - **Telugu (తెలుగు)** — Voice commands and localized emergency service names
 - **Persistent Preference** — Language selection saved across app restarts
 - **Language Toggle** — Easy switcher in the app header
-
----
-
-## 📸 Screenshots
-
-> _Screenshots coming soon — contributions welcome!_
-
-<!--
-<p align="center">
-  <img src="docs/screenshots/onboarding.png" width="200" alt="Onboarding"/>
-  <img src="docs/screenshots/home.png" width="200" alt="Home Dashboard"/>
-  <img src="docs/screenshots/voice.png" width="200" alt="Voice Commands"/>
-  <img src="docs/screenshots/legal.png" width="200" alt="Legal Chat"/>
-</p>
--->
 
 ---
 
@@ -568,11 +553,7 @@ durga/
 | **Safety Profile** | ✅ Live | Personal, medical, and emergency info |
 | **FCM Push Notifications** | 🚧 WIP | Config exists, implementation in progress |
 | **Google Maps View** | 🚧 WIP | API key wired, map screen pending |
-| **SMS Alert to Contacts** | 📋 Planned | Auto-SMS on SOS trigger |
-| **Predictive Threat Detection** | 📋 Planned | ML-based threat prediction |
-| **Wearable / Bluetooth Panic** | 📋 Planned | Smartwatch & BLE panic button |
-| **Offline SOS** | 📋 Planned | SOS without internet connectivity |
-| **iOS Support** | 📋 Planned | Flutter cross-platform deployment |
+
 
 ---
 
