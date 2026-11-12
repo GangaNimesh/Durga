@@ -553,11 +553,7 @@ durga/
 | **Safety Profile** | ✅ Live | Personal, medical, and emergency info |
 | **FCM Push Notifications** | 🚧 WIP | Config exists, implementation in progress |
 | **Google Maps View** | 🚧 WIP | API key wired, map screen pending |
-| **SMS Alert to Contacts** | 📋 Planned | Auto-SMS on SOS trigger |
-| **Predictive Threat Detection** | 📋 Planned | ML-based threat prediction |
-| **Wearable / Bluetooth Panic** | 📋 Planned | Smartwatch & BLE panic button |
-| **Offline SOS** | 📋 Planned | SOS without internet connectivity |
-| **iOS Support** | 📋 Planned | Flutter cross-platform deployment |
+
 
 ---
 
